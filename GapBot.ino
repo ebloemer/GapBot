@@ -50,8 +50,8 @@
 #define RIGHT_ARM_MOTOR_A       9  // GPIO37 pin 30 (J37) Motor 2 A
 #define RIGHT_ARM_MOTOR_B       8  // GPIO38 pin 31 (J38) Motor 2 B
 
-#define RIGHT_SERVO             42  // GPIO41 pin 34 (J41) Servo 1
-#define LEFT_SERVO              41 // GPIO42 pin 35 (J42) Servo 2
+#define RIGHT_SERVO             41  // GPIO41 pin 34 (J41) Servo 1
+#define LEFT_SERVO              42 // GPIO42 pin 35 (J42) Servo 2
 
 #define MOTOR_ENABLE_SWITCH     46  // DIP Switch S1-5 pulls Digital pin D3 to ground when on, connected to pin 15 GPIO3 (J3)
                                 // When DIP Switch S1-5 is off, J3 can be used as analog AD1-2
@@ -63,7 +63,7 @@
 
 // Constants
 
-const int ci_Display_Update = 100;                                            // Update interval for Smart LED in milliseconds
+const int ci_Display_Update = 50;                                            // Update interval for Smart LED in milliseconds
 
 boolean bt_Motors_Enabled = true;                                             // Motors enabled flag
 boolean bt_3_S_Time_Up = false;                                               // 3 second timer elapsed flag
@@ -86,9 +86,11 @@ unsigned long ul_Current_Micros;
 // You will have to experiment to determine appropriate values.
 
 const int rearExtendedRight = 1880;                                          // Value for open position of rear arm
-const int rearExtendedLeft = 547;                                        // Value for closed position of rear arm
-int rearPositionLeft = 900;
-int rearPositionRight = 900;
+const int rearExtendedLeft = 500;                                        // Value for closed position of rear arm
+const int rearRetractedLeft = 1880;
+const int rearRetractedRight = 500;
+int rearPositionLeft, rearPositionRight;
+
 
 //
 //=====================================================================================================================
@@ -104,9 +106,9 @@ unsigned char LEDBrightnessLevels[] = {5,15,30,45,60,75,90,105,120,135,150,165,1
 
 unsigned int  ui_Mode_Indicator[7] = {                                        // Colours for different modes
   SmartLEDs.Color(255,0,0),                                                   //   Red - Stop
-  SmartLEDs.Color(0,255,0),                                                   //   Green - Run
+  SmartLEDs.Color(255,255,0),                                                 //   Yellow - Run
+  SmartLEDs.Color(0,255,0),                                                   //   Green - Complete
   SmartLEDs.Color(0,0,255),                                                   //   Blue - Test stepper
-  SmartLEDs.Color(255,255,0),                                                 //   Yellow - Test claw servo
   SmartLEDs.Color(255,0,255),                                                 //   Magenta - Test shoulder servo
   SmartLEDs.Color(0,255,255),                                                 //   Cyan - Test IR receiver
   SmartLEDs.Color(255,165,0)                                                  //   Orange - empty case
@@ -121,9 +123,7 @@ void setup()
    Serial.begin(9600);
 
    // Set up motors and encoders
-//   Bot.driveBegin("D1", LEFT_DRIVE_MOTOR_A, LEFT_DRIVE_MOTOR_B, RIGHT_DRIVE_MOTOR_A, RIGHT_DRIVE_MOTOR_B); // Set up motors as Drive 1
-//   Bot.driveBegin("D1", LEFT_ARM_MOTOR_A, LEFT_ARM_MOTOR_B, RIGHT_ARM_MOTOR_A, RIGHT_ARM_MOTOR_B);
-//   Bot.driveBegin("M1", LEFT_ARM_MOTOR_A, LEFT_ARM_MOTOR_B, RIGHT_ARM_MOTOR_A, RIGHT_ARM_MOTOR_B);
+   Bot.driveBegin("D1", LEFT_DRIVE_MOTOR_A, LEFT_DRIVE_MOTOR_B, RIGHT_DRIVE_MOTOR_A, RIGHT_DRIVE_MOTOR_B); // Set up motors as Drive 1
    Bot.servoBegin("S1",RIGHT_SERVO);   
    Bot.servoBegin("S2",LEFT_SERVO);
 
@@ -208,7 +208,9 @@ void loop()
             {
                ui_Mode_PB_Debounce = 0;                                       // Reset debounce timer count
                ui_Robot_Mode_Index++;                                         // Switch to next mode
-               ui_Robot_Mode_Index = ui_Robot_Mode_Index & 7;                 // Keep mode index between 0 and 7
+               if(ui_Robot_Mode_Index > 2){
+                 ui_Robot_Mode_Index = 0;
+               }                // Keep mode index between 0 and 2
                ul_3_Second_timer = 0;                                         // Reset 3 second timer count
                bt_3_S_Time_Up = false;                                        // Reset 3 second timer         
             }
@@ -222,8 +224,8 @@ void loop()
       {
          case 0: // Robot stopped
          {
-            digitalWrite(LEFT_DRIVE_MOTOR_A, LOW);
-            digitalWrite(RIGHT_DRIVE_MOTOR_A, LOW);
+            digitalWrite(RIGHT_ARM_MOTOR_A, LOW);
+            digitalWrite(RIGHT_ARM_MOTOR_B, LOW);
             digitalWrite(LEFT_ARM_MOTOR_A, LOW);
             digitalWrite(LEFT_ARM_MOTOR_B, LOW);
             Bot.Stop("D1");                                                   // Stop Drive 1
@@ -233,75 +235,100 @@ void loop()
 
          case 1: //Robot goes
          {
-          rearPositionLeft = 1214;
-          rearPositionRight = 1214;
-          // Make sure all motion is stopped
-          digitalWrite(LEFT_DRIVE_MOTOR_A, LOW);
-            digitalWrite(RIGHT_DRIVE_MOTOR_A, LOW);
-          Bot.Stop("D1");
+          SmartLEDs.setBrightness(LEDBrightnessLevels[17]);
+          Indicator();
+          rearPositionLeft = rearRetractedLeft;
+          rearPositionRight = rearRetractedRight;
 
-          while(rearPositionRight < rearExtendedRight){
-            Bot.ToPosition("S2", rearPositionLeft);
-            Bot.ToPosition("S1", rearPositionRight);
-            rearPositionLeft -= 1;
-            rearPositionRight += 1;
+          //Extend da chopper
+          while((rearPositionLeft > rearExtendedLeft) || (rearPositionRight < rearExtendedRight)){
+            if(rearPositionRight < rearExtendedRight){
+              Bot.ToPosition("S1", rearPositionRight);
+              rearPositionRight += 1;
+            }
+            if(rearPositionLeft > rearExtendedLeft){
+              Bot.ToPosition("S2", rearPositionLeft);
+              rearPositionLeft -= 1;
+            }
+            delay(1);
           }
 
           //drive until end of table
-          digitalWrite(LEFT_DRIVE_MOTOR_A, HIGH);
-          digitalWrite(RIGHT_DRIVE_MOTOR_A, HIGH);
+          Bot.Forward("D1",255);
           while(!digitalRead(LIMIT_SWITCH)){
               delay(1);
           }
-          digitalWrite(LEFT_DRIVE_MOTOR_A, LOW);
-          digitalWrite(RIGHT_DRIVE_MOTOR_A, LOW);
+          Bot.Stop("D1");
 
           //extend arm
-//          Bot.Forward("D1", 255);
           digitalWrite(LEFT_ARM_MOTOR_A, HIGH);
           digitalWrite(RIGHT_ARM_MOTOR_A, HIGH);
           delay(4000);
-//          Bot.Stop("D1");
           digitalWrite(LEFT_ARM_MOTOR_A, LOW);
           digitalWrite(RIGHT_ARM_MOTOR_A, LOW);
 
-          //drive baby drive
-          digitalWrite(LEFT_DRIVE_MOTOR_A, HIGH);
-          digitalWrite(RIGHT_DRIVE_MOTOR_A, HIGH);
-          delay(1600);
-          digitalWrite(LEFT_DRIVE_MOTOR_A, LOW);
-          digitalWrite(RIGHT_DRIVE_MOTOR_A, LOW);
-
           //Fold baby fold
-          while(rearPositionRight > 1214){
-            Bot.ToPosition("S2", rearPositionLeft);
-            Bot.ToPosition("S1", rearPositionRight);
-            rearPositionLeft += 1;
-            rearPositionRight -= 1;
+          while((rearPositionLeft < rearRetractedLeft) || (rearPositionRight > rearRetractedRight)){
+            if(rearPositionRight > rearRetractedRight){
+              Bot.ToPosition("S1", rearPositionRight);
+              rearPositionRight -= 1;
+            }
+            if(rearPositionLeft < rearRetractedLeft){
+              Bot.ToPosition("S2", rearPositionLeft);
+              rearPositionLeft += 1;
+            }
+            delay(1);
           }
 
-          // //throw it in reverse terry
-          // Bot.Reverse("D1",200);
-          // delay(800);
-          // Bot.Stop("D1");
+          //drive baby drive
+          Bot.Forward("D1", 255);
+          delay(4000);
+          Bot.Stop("D1");
 
-          ui_Robot_Mode_Index = 0;
+
+          //throw it in reverse terry
+          Bot.Reverse("D1",255);
+          delay(800);
+          Bot.Stop("D1");
+
+          ui_Robot_Mode_Index = 2;
 
           break;
         }
+        case 2: //Robot is done
+        {
+          if(digitalRead(LIMIT_SWITCH)){
+              ui_Robot_Mode_Index = 2;
+          }
+          else{
+            ui_Robot_Mode_Index = 0;
+          }
+        }   
+      } 
 
-      ul_Display_Time++;                                                      // Count milliseconds
-      if(ul_Display_Time > ci_Display_Update)                                 // When display update period has passed
-      {
-         ul_Display_Time = 0;                                                 // Reset display counter
-         LEDBrightnessIndex++;                                                // Shift to next brightness level
-         if(LEDBrightnessIndex > sizeof(LEDBrightnessLevels))                 // If all defined levels have been used
-         {
+    ul_Display_Time++;                                                      // Count milliseconds
+    if(ul_Display_Time > ci_Display_Update)                                 // When display update period has passed
+    {
+        ul_Display_Time = 0;
+        if(ui_Robot_Mode_Index != 1){                                                 // Reset display counter
+          LEDBrightnessIndex++;                                                // Shift to next brightness level
+          if(LEDBrightnessIndex > sizeof(LEDBrightnessLevels))                 // If all defined levels have been used
+          {
             LEDBrightnessIndex = 0;                                           // Reset to starting brightness
-         }
-         SmartLEDs.setBrightness(LEDBrightnessLevels[LEDBrightnessIndex]);    // Set brightness of heartbeat LED
-         Indicator();                                                         // Update LED
-      }
+          }
+        }else{
+          LEDBrightnessIndex = 17;
+        }
+        SmartLEDs.setBrightness(LEDBrightnessLevels[LEDBrightnessIndex]);    // Set brightness of heartbeat LED
+        Indicator();                                                         // Update LED
     }
   }
 }
+
+// Set colour of Smart LED depending on robot mode (and update brightness)
+void Indicator()
+{
+  SmartLEDs.setPixelColor(0, ui_Mode_Indicator[ui_Robot_Mode_Index]);         // Set pixel colors to = mode 
+  SmartLEDs.show();                                                           // Send the updated pixel colors to the hardware
+}
+
