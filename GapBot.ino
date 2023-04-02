@@ -47,8 +47,8 @@
                                    
 #define LEFT_ARM_MOTOR_A        6  // GPIO35 pin 28 (J35) Motor 1 A
 #define LEFT_ARM_MOTOR_B        7  // GPIO36 pin 29 (J36) Motor 1 B
-#define RIGHT_ARM_MOTOR_A       9  // GPIO37 pin 30 (J37) Motor 2 A
-#define RIGHT_ARM_MOTOR_B       8  // GPIO38 pin 31 (J38) Motor 2 B
+#define RIGHT_ARM_MOTOR_A       8  // GPIO37 pin 30 (J37) Motor 2 A
+#define RIGHT_ARM_MOTOR_B       9  // GPIO38 pin 31 (J38) Motor 2 B
 
 #define RIGHT_SERVO             41  // GPIO41 pin 34 (J41) Servo 1
 #define LEFT_SERVO              42 // GPIO42 pin 35 (J42) Servo 2
@@ -140,11 +140,12 @@ void setup()
 
    pinMode(MODE_BUTTON, INPUT_PULLUP);                                        //set up mode button with internal pullup
    pinMode(LIMIT_SWITCH, INPUT_PULLUP);
-   pinMode(LEFT_DRIVE_MOTOR_A, OUTPUT);
-   pinMode(RIGHT_DRIVE_MOTOR_A, OUTPUT);
+  //  pinMode(LEFT_DRIVE_MOTOR_A, OUTPUT);
+  //  pinMode(RIGHT_DRIVE_MOTOR_A, OUTPUT);
    pinMode(LEFT_ARM_MOTOR_A, OUTPUT);
    pinMode(RIGHT_ARM_MOTOR_A, OUTPUT);
    pinMode(LEFT_ARM_MOTOR_B, OUTPUT);
+   pinMode(RIGHT_ARM_MOTOR_B, OUTPUT);
 }
 
 void loop()
@@ -263,9 +264,13 @@ void loop()
           //extend arm
           digitalWrite(LEFT_ARM_MOTOR_A, HIGH);
           digitalWrite(RIGHT_ARM_MOTOR_A, HIGH);
-          delay(4000);
+          digitalWrite(LEFT_ARM_MOTOR_B, HIGH);
+          digitalWrite(RIGHT_ARM_MOTOR_B, HIGH);
+          delay(20000);
           digitalWrite(LEFT_ARM_MOTOR_A, LOW);
           digitalWrite(RIGHT_ARM_MOTOR_A, LOW);
+          digitalWrite(LEFT_ARM_MOTOR_B, LOW);
+          digitalWrite(RIGHT_ARM_MOTOR_B, LOW);
 
           //Fold baby fold
           while((rearPositionLeft < rearRetractedLeft) || (rearPositionRight > rearRetractedRight)){
@@ -297,7 +302,7 @@ void loop()
         }
         case 2: //Robot is done
         {
-          if(digitalRead(LIMIT_SWITCH)){
+          if(!digitalRead(LIMIT_SWITCH)){
               ui_Robot_Mode_Index = 2;
           }
           else{
