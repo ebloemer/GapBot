@@ -272,6 +272,15 @@ void loop()
           digitalWrite(LEFT_ARM_MOTOR_B, LOW);
           digitalWrite(RIGHT_ARM_MOTOR_B, LOW);
 
+          
+
+          //drive baby drive
+          Bot.Forward("D1", 255);
+          while(!digitalRead(LIMIT_SWITCH)){
+              delay(1);
+          }
+          Bot.Stop("D1");
+
           //Fold baby fold
           while((rearPositionLeft < rearRetractedLeft) || (rearPositionRight > rearRetractedRight)){
             if(rearPositionRight > rearRetractedRight){
@@ -285,15 +294,9 @@ void loop()
             delay(1);
           }
 
-          //drive baby drive
-          Bot.Forward("D1", 255);
-          delay(4000);
-          Bot.Stop("D1");
-
-
           //throw it in reverse terry
           Bot.Reverse("D1",255);
-          delay(800);
+          delay(6000);
           Bot.Stop("D1");
 
           ui_Robot_Mode_Index = 2;
