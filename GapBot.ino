@@ -254,31 +254,37 @@ void loop()
             delay(1);
           }
 
-          //drive until end of table
-          Bot.Forward("D1",255);
-          while(!digitalRead(LIMIT_SWITCH)){
-              delay(1);
-          }
-          Bot.Stop("D1");
+          // //drive until end of table
+          // Bot.Forward("D1",255);
+          // while(!digitalRead(LIMIT_SWITCH)){
+          //     delay(1);
+          // }
+          // Bot.Stop("D1");
 
-          //extend arm
-          digitalWrite(LEFT_ARM_MOTOR_A, HIGH);
-          digitalWrite(RIGHT_ARM_MOTOR_A, HIGH);
-          digitalWrite(LEFT_ARM_MOTOR_B, HIGH);
-          digitalWrite(RIGHT_ARM_MOTOR_B, HIGH);
-          delay(20000);
-          digitalWrite(LEFT_ARM_MOTOR_A, LOW);
-          digitalWrite(RIGHT_ARM_MOTOR_A, LOW);
-          digitalWrite(LEFT_ARM_MOTOR_B, LOW);
-          digitalWrite(RIGHT_ARM_MOTOR_B, LOW);
+          // //extend arm
+          // digitalWrite(LEFT_ARM_MOTOR_A, HIGH);
+          // digitalWrite(RIGHT_ARM_MOTOR_A, HIGH);
+          // digitalWrite(LEFT_ARM_MOTOR_B, HIGH);
+          // digitalWrite(RIGHT_ARM_MOTOR_B, HIGH);
+          // delay(32000);
+          // digitalWrite(LEFT_ARM_MOTOR_A, LOW);
+          // digitalWrite(RIGHT_ARM_MOTOR_A, LOW);
+          // digitalWrite(LEFT_ARM_MOTOR_B, LOW);
+          // digitalWrite(RIGHT_ARM_MOTOR_B, LOW);
 
           
 
           //drive baby drive
           Bot.Forward("D1", 255);
+          delay(5000);
           while(!digitalRead(LIMIT_SWITCH)){
               delay(1);
           }
+          Bot.Stop("D1");
+
+          //throw it in reverse terry
+          Bot.Reverse("D1",255);
+          delay(10500);
           Bot.Stop("D1");
 
           //Fold baby fold
@@ -293,11 +299,6 @@ void loop()
             }
             delay(1);
           }
-
-          //throw it in reverse terry
-          Bot.Reverse("D1",255);
-          delay(6000);
-          Bot.Stop("D1");
 
           ui_Robot_Mode_Index = 2;
 
