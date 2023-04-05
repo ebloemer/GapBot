@@ -2,7 +2,9 @@
 
  MSE 2202 GapBot
  Language: Arduino
- Authors: Eugen Porter and Michael Naish
+ Authors: Jack Chios, Salim Kanji, Ethan Bloemert
+
+ Using libraries recieved in the MSE2202 class in 2023
  
  */
 
@@ -140,8 +142,6 @@ void setup()
 
    pinMode(MODE_BUTTON, INPUT_PULLUP);                                        //set up mode button with internal pullup
    pinMode(LIMIT_SWITCH, INPUT_PULLUP);
-  //  pinMode(LEFT_DRIVE_MOTOR_A, OUTPUT);
-  //  pinMode(RIGHT_DRIVE_MOTOR_A, OUTPUT);
    pinMode(LEFT_ARM_MOTOR_A, OUTPUT);
    pinMode(RIGHT_ARM_MOTOR_A, OUTPUT);
    pinMode(LEFT_ARM_MOTOR_B, OUTPUT);
@@ -254,27 +254,27 @@ void loop()
             delay(1);
           }
 
-          // //drive until end of table
-          // Bot.Forward("D1",255);
-          // while(!digitalRead(LIMIT_SWITCH)){
-          //     delay(1);
-          // }
-          // Bot.Stop("D1");
+          //drive until end of table
+          Bot.Forward("D1",255);
+          while(!digitalRead(LIMIT_SWITCH)){
+              delay(1);
+          }
+          Bot.Stop("D1");
 
-          // //extend arm
-          // digitalWrite(LEFT_ARM_MOTOR_A, HIGH);
-          // digitalWrite(RIGHT_ARM_MOTOR_A, HIGH);
-          // digitalWrite(LEFT_ARM_MOTOR_B, HIGH);
-          // digitalWrite(RIGHT_ARM_MOTOR_B, HIGH);
-          // delay(32000);
-          // digitalWrite(LEFT_ARM_MOTOR_A, LOW);
-          // digitalWrite(RIGHT_ARM_MOTOR_A, LOW);
-          // digitalWrite(LEFT_ARM_MOTOR_B, LOW);
-          // digitalWrite(RIGHT_ARM_MOTOR_B, LOW);
+          //extend arm
+          digitalWrite(LEFT_ARM_MOTOR_A, HIGH);
+          digitalWrite(RIGHT_ARM_MOTOR_A, HIGH);
+          digitalWrite(LEFT_ARM_MOTOR_B, HIGH);
+          digitalWrite(RIGHT_ARM_MOTOR_B, HIGH);
+          delay(32000);
+          digitalWrite(LEFT_ARM_MOTOR_A, LOW);
+          digitalWrite(RIGHT_ARM_MOTOR_A, LOW);
+          digitalWrite(LEFT_ARM_MOTOR_B, LOW);
+          digitalWrite(RIGHT_ARM_MOTOR_B, LOW);
 
           
 
-          //drive baby drive
+          //drive baby drive for 5 seconds or until limit switch released, whichever comes later
           Bot.Forward("D1", 255);
           delay(5000);
           while(!digitalRead(LIMIT_SWITCH)){
@@ -304,7 +304,7 @@ void loop()
 
           break;
         }
-        case 2: //Robot is done
+        case 2: //Robot is done, auto-reset to off when picked up
         {
           if(!digitalRead(LIMIT_SWITCH)){
               ui_Robot_Mode_Index = 2;
